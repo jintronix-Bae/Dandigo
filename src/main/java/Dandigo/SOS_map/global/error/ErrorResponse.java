@@ -2,20 +2,25 @@ package Dandigo.SOS_map.global.error;
 
 import org.springframework.http.ResponseEntity;
 
+import java.util.List;
+
 public record ErrorResponse(
         Integer status,
-        String error,
         String code,
-        String message
+        String message,
+        List<FieldErrorDetail> errors
 ) {
+
+    // #0.입력값 검증 실패 항목
+    public record FieldErrorDetail(String field, String reason) {}
 
     // #1.ErrorCode를 받아서 자신 객체를 만드는 팩토리 메서드
     public static ErrorResponse of(ErrorCode errorCode) {
         return new ErrorResponse(
                 errorCode.getStatus().value(),
-                errorCode.getStatus().name(),
                 errorCode.name(),
-                errorCode.getMessage()
+                errorCode.getMessage(),
+                List.of() // 일반 에러는 빈 배열 반환
         );
     }
 
@@ -27,12 +32,12 @@ public record ErrorResponse(
     }
 
     // #3.@Valid 에서 커스텀 메세지를 전달받는 팩토리 메서드
-    public static ErrorResponse of(ErrorCode errorCode, String message) {
+    public static ErrorResponse of(ErrorCode errorCode, String message, List<FieldErrorDetail> errors) {
         return new ErrorResponse(
                 errorCode.getStatus().value(),
-                errorCode.getStatus().name(),
                 errorCode.name(),
-                message
+                message,
+                errors
         );
     }
 }
