@@ -9,7 +9,11 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create
-    properties:
-      hibernate:
-        format_sql: true
-        show_sql: true
+  servlet:
+    multipart:
+      max-file-size: 3MB
+      max-request-size: 3MB
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: ${JWT_EXPIRATION}

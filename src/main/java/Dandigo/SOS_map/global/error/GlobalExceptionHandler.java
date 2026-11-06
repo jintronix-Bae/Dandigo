@@ -5,7 +5,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -25,7 +24,6 @@ public class GlobalExceptionHandler {
     // #1.CustomException 발생시 해당 메서드가 가로채서 처리한다.
     @ExceptionHandler(CustomException.class)
     protected ResponseEntity<ErrorResponse> handleCustomException(CustomException e) {
-        log.error("CustomException : {}", e.getErrorCode().getMessage());
         return ErrorResponse.toResponseEntity(e.getErrorCode());
     }
 
@@ -60,12 +58,12 @@ public class GlobalExceptionHandler {
             return ErrorResponse.toResponseEntity(ErrorCode.DUPLICATE_EMAIL);
         }
         // 여기까지 오면 서버 에러
-        log.error("DataIntegrityViolationException : {}", e);
+        log.error("DataIntegrityViolationException", e);
         return ErrorResponse.toResponseEntity(ErrorCode.INTERNAL_ERROR);
     }
 
     // #6.지원하지 않는 HTTP 메서드
-    @ExceptionHandler(Exception.class)
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
         return ErrorResponse.toResponseEntity(ErrorCode.METHOD_NOT_ALLOWED);
     }
@@ -95,8 +93,9 @@ public class GlobalExceptionHandler {
     }
 
     // #11.예기치 못한 예외 처리
+    @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
-        log.error("Unhandled Exception : {}", e);
+        log.error("Unhandled Exception", e);
         return ErrorResponse.toResponseEntity(ErrorCode.INTERNAL_ERROR);
     }
 
