@@ -1,0 +1,16 @@
+# 키가 들어 있는 .env는 이미지에 절대 넣지 않는다 (실행 시 docker compose가 환경변수로 전달)
+.env
+.env.*
+
+.git
+.gitignore
+.gradle
+build
+out
+bin
+.idea
+*.iml
+.vscode
+HELP.md
+Dockerfile
+docker-compose.yml
