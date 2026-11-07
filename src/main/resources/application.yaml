@@ -1,6 +1,9 @@
 spring:
   application:
     name: SOS_map
+  config:
+    # 프로젝트 최상위의 .env 파일을 읽는다. 없으면(배포 서버 등) 실제 환경변수를 사용한다.
+    import: optional:file:.env[.properties]
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: ${DB_URL}
@@ -8,12 +11,30 @@ spring:
     password: ${DB_PW}
   jpa:
     hibernate:
-      ddl-auto: create
+      # update: 없는 테이블·컬럼만 추가하고 데이터는 지우지 않는다. (로컬에서 초기화하려면 .env에 JPA_DDL_AUTO=create)
+      ddl-auto: ${JPA_DDL_AUTO:update}
   servlet:
     multipart:
-      max-file-size: 3MB
-      max-request-size: 3MB
+      max-file-size: 10MB
+      max-request-size: 11MB   # 파일 10MB + multipart 구분자 여유
 
 jwt:
   secret: ${JWT_SECRET}
   access-token-expiration: ${JWT_EXPIRATION}
+
+aws:
+  region: ${AWS_REGION}
+  s3:
+    bucket: ${AWS_S3_BUCKET}
+  # 비어 있으면 기본 자격 증명(EC2 역할 등)을 사용한다.
+  access-key: ${AWS_ACCESS_KEY:}
+  secret-key: ${AWS_SECRET_KEY:}
+
+kakao:
+  # 좌표 → 행정구역(지역 이름표). 비어 있으면 주소 문자열로 판단한다.
+  rest-key: ${KAKAO_REST_KEY:}
+
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  image-model: ${GEMINI_IMAGE_MODEL:gemini-2.5-flash-image}
+  timeout-seconds: 60

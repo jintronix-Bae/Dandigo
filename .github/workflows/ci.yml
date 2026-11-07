@@ -1,0 +1,64 @@
+# CI: PR(→ main, develop)과 develop 푸시 때 빌드하고, 테스트용 MySQL로 서버가 정상 기동하는지 확인한다.
+name: CI
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ develop ]
+  workflow_call:   # 배포(deploy.yml)에서 먼저 이 테스트를 돌린다
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: sos_map
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -ptest --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    # 테스트용 값 (실제 키 아님). 외부 서비스(S3·Gemini·카카오)는 기동만 확인하고 호출하지 않는다.
+    env:
+      DB_URL: jdbc:mysql://127.0.0.1:3306/sos_map?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&useSSL=false
+      DB_USERNAME: root
+      DB_PW: test
+      JPA_DDL_AUTO: create
+      JWT_SECRET: ci-test-jwt-secret-key-0123456789abcdef
+      JWT_EXPIRATION: 86400000
+      AWS_REGION: ap-southeast-2
+      AWS_S3_BUCKET: ci-test-bucket
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: gradlew 실행 권한
+        run: chmod +x gradlew
+
+      - name: 빌드 + 테스트
+        run: ./gradlew build --no-daemon
+
+      - name: 테스트 결과 업로드 (실패 시)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: build/reports/tests/test
