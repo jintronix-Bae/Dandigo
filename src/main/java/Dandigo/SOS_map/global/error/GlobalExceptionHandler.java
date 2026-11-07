@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
@@ -116,6 +118,12 @@ public class GlobalExceptionHandler {
     // #9-1.JSON이 아닌 Content-Type으로 Body를 보낸 경우 (형식 오류 → 400)
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {
+        return ErrorResponse.toResponseEntity(ErrorCode.INVALID_INPUT);
+    }
+
+    // #9-2.multipart 요청에 파일 필드(image)가 없거나, multipart 형식이 아닌 경우
+    @ExceptionHandler({MissingServletRequestPartException.class, MultipartException.class})
+    public ResponseEntity<ErrorResponse> handleMultipartException(Exception e) {
         return ErrorResponse.toResponseEntity(ErrorCode.INVALID_INPUT);
     }
 

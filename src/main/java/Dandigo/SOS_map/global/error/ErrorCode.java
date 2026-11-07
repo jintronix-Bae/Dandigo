@@ -32,9 +32,11 @@ public enum ErrorCode {
     // 413
     FILE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "사진은 3MB 이하로 올려주세요."),
     // 415
-    UNSUPPORTED_FILE_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "jpg, png, heic 형식의 사진만 올릴 수 있습니다."),
+    UNSUPPORTED_FILE_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "jpg, png 형식의 사진만 올릴 수 있습니다."),
     // 500
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요");
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요"),
+    // 502
+    AI_UNAVAILABLE(HttpStatus.BAD_GATEWAY, "AI 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.");
 
     private final HttpStatus status;
     private final String message;

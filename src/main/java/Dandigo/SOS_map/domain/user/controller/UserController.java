@@ -63,4 +63,10 @@ public class UserController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    // #5.마이페이지 (내 정보, 활동 통계, 최근 민원 4개)
+    @GetMapping("/mypage")
+    public ResponseEntity<MyPageResponse> myPage(@AuthenticationPrincipal AuthUser authUser) {
+        return ResponseEntity.ok(userService.getMyPage(authUser.userId()));
+    }
+
 }

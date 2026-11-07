@@ -1,6 +1,10 @@
 package Dandigo.SOS_map.domain.user.service;
 
+import Dandigo.SOS_map.domain.complaint.entity.ComplaintStatus;
+import Dandigo.SOS_map.domain.complaint.repository.ComplaintRepository;
+import Dandigo.SOS_map.domain.complaint.service.ComplaintQueryService;
 import Dandigo.SOS_map.domain.user.dto.request.SignUpRequest;
+import Dandigo.SOS_map.domain.user.dto.response.MyPageResponse;
 import Dandigo.SOS_map.domain.user.dto.response.EmailCheckResponse;
 import Dandigo.SOS_map.domain.user.dto.response.LoginIdCheckResponse;
 import Dandigo.SOS_map.domain.user.dto.response.SignUpResponse;
@@ -23,6 +27,8 @@ public class UserService {
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ComplaintRepository complaintRepository;
+    private final ComplaintQueryService complaintQueryService;
 
     // #1.회원가입 (1번)
     @Transactional
@@ -54,6 +60,23 @@ public class UserService {
     // #3.아이디 중복 확인 (3번)
     public LoginIdCheckResponse checkLoginId(String loginId) {
         return new LoginIdCheckResponse(loginId, !memberRepository.existsByLoginId(loginId));
+    }
+
+    // #4.마이페이지 (5번): 내 정보, 활동 통계 3개, 최근 등록한 민원 최대 4개(최신순)
+    public MyPageResponse getMyPage(Long userId) {
+        Member member = memberRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.UNAUTHORIZED));
+
+        MyPageResponse.Stats stats = new MyPageResponse.Stats(
+                complaintRepository.countByUserId(userId),
+                complaintRepository.countByUserIdAndStatus(userId, ComplaintStatus.RESOLVED),
+                complaintRepository.sumLikeCountByUserId(userId));
+
+        return new MyPageResponse(
+                new MyPageResponse.UserInfo(member.getId(), member.getLoginId(), member.getName(), member.getEmail()),
+                stats,
+                complaintQueryService.toSummaries(userId,
+                        complaintRepository.findTop4ByUserIdOrderByCreatedAtDescIdDesc(userId)));
     }
 
     // 이메일은 앞뒤 공백을 지우고 소문자로 맞춰서 비교·저장한다.
