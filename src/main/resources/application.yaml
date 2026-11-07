@@ -30,6 +30,9 @@ aws:
   access-key: ${AWS_ACCESS_KEY:}
   secret-key: ${AWS_SECRET_KEY:}
 
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:*,http://127.0.0.1:*}
+
 kakao:
   # 좌표 → 행정구역(지역 이름표). 비어 있으면 주소 문자열로 판단한다.
   rest-key: ${KAKAO_REST_KEY:}

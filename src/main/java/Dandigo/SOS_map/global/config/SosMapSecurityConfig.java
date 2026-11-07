@@ -4,6 +4,7 @@ import Dandigo.SOS_map.global.security.jwt.JwtAccessDeniedHandler;
 import Dandigo.SOS_map.global.security.jwt.JwtAuthenticationEntryPoint;
 import Dandigo.SOS_map.global.security.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -59,13 +60,16 @@ public class SosMapSecurityConfig {
         return http.build();
     }
 
-    // CORS 설정 (배포)
+    // CORS 설정: 허용할 프론트 주소는 cors.allowed-origins(환경변수 CORS_ALLOWED_ORIGINS, 쉼표 구분)로 정한다.
+    // 기본값은 프론트 로컬 개발용 localhost·127.0.0.1의 모든 포트. 프론트 배포 주소가 생기면 환경변수에 추가한다.
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(
+            @Value("${cors.allowed-origins}") List<String> allowedOrigins) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("frontend 기본 배포 url"));
+        configuration.setAllowedOriginPatterns(allowedOrigins.stream().map(String::trim).filter(s -> !s.isEmpty()).toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setMaxAge(3600L);   // 브라우저가 사전 요청(OPTIONS) 결과를 1시간 기억
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
