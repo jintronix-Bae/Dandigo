@@ -1,0 +1,60 @@
+# Spring 서버 + MySQL을 한 번에 띄운다:  docker compose up -d --build
+# 값은 같은 폴더의 .env 에서 읽는다 (.env 는 Git·이미지에 포함되지 않음)
+name: sos-map
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: sos-map-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PW}
+      MYSQL_DATABASE: ${DB_NAME:-sos_map}
+      TZ: Asia/Seoul
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql      # 컨테이너를 지워도 데이터는 남는다
+    # DB 포트는 외부에 열지 않는다. 로컬에서 직접 접속해야 하면 아래 주석을 푼다 (서버에서는 열지 말 것)
+    # ports:
+    #   - "127.0.0.1:3307:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  app:
+    build: .
+    # 로컬: 직접 빌드한 sos-map-backend / 서버: .env의 DOCKER_IMAGE(예: 아이디/sos-map-backend)를 Docker Hub에서 받는다
+    image: ${DOCKER_IMAGE:-sos-map-backend}:${IMAGE_TAG:-latest}
+    container_name: sos-map-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy     # MySQL이 준비된 뒤에 Spring을 띄운다
+    ports:
+      - "8080:8080"
+    environment:
+      # 컨테이너 안에서는 localhost가 아니라 서비스 이름(mysql)으로 접속한다
+      DB_URL: jdbc:mysql://mysql:3306/${DB_NAME:-sos_map}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&useSSL=false
+      DB_USERNAME: root
+      DB_PW: ${DB_PW}
+      JPA_DDL_AUTO: ${JPA_DDL_AUTO:-update}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      AWS_REGION: ${AWS_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      # EC2에 IAM 역할을 붙였다면 두 키는 .env에서 비워두면 된다
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY:-}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_IMAGE_MODEL: ${GEMINI_IMAGE_MODEL:-gemini-2.5-flash-image}
+      KAKAO_REST_KEY: ${KAKAO_REST_KEY:-}
+      JAVA_OPTS: ${JAVA_OPTS:--Xmx512m}
+      TZ: Asia/Seoul
+
+volumes:
+  mysql-data:
