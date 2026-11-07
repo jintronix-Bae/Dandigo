@@ -37,7 +37,7 @@ jobs:
       JPA_DDL_AUTO: create
       JWT_SECRET: ci-test-jwt-secret-key-0123456789abcdef
       JWT_EXPIRATION: 86400000
-      AWS_REGION: ap-southeast-2
+      AWS_REGION: ap-northeast-2
       AWS_S3_BUCKET: ci-test-bucket
 
     steps:

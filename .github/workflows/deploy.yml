@@ -86,6 +86,8 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           envs: ENV_FILE,DOCKERHUB_USERNAME,DOCKERHUB_TOKEN,IMAGE_TAG,IMAGE_NAME,DEPLOY_DIR
+          # 첫 배포는 이미지(앱 + MySQL) 다운로드가 오래 걸린다. 기본값 10분이면 부족할 수 있다.
+          command_timeout: 30m
           script_stop: true
           script: |
             set -e
@@ -102,13 +104,13 @@ jobs:
             docker compose up -d --no-build
             docker image prune -f
 
-            # 서버가 뜰 때까지 최대 2분 대기
-            for i in $(seq 1 24); do
+            # 서버가 뜰 때까지 최대 3분 대기 (작은 EC2는 Spring 기동이 느릴 수 있다)
+            for i in $(seq 1 36); do
               if docker compose logs app 2>&1 | grep -q "Started SosMapApplication"; then
                 echo "배포 성공: $IMAGE_TAG"; exit 0
               fi
               sleep 5
             done
-            echo "서버가 2분 안에 시작되지 않았습니다. 최근 로그:"
+            echo "서버가 3분 안에 시작되지 않았습니다. 최근 로그:"
             docker compose logs --tail 80 app
             exit 1
