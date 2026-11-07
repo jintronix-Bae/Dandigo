@@ -6,16 +6,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
@@ -30,7 +34,30 @@ public class GlobalExceptionHandler {
     // #2.dto의 @Valid 검증 실패 시 에러 처리(항목별 오류를 errors에 담는다)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
-        List<ErrorResponse.FieldErrorDetail> errorList = e.getBindingResult().getFieldErrors().stream().map(fe -> new ErrorResponse.FieldErrorDetail(fe.getField(), fe.getDefaultMessage())).toList();
+        // 한 항목이 여러 규칙(@NotBlank + @Size 등)에 동시에 걸려도 항목당 하나의 reason만 담는다.
+        Map<String, String> reasons = new LinkedHashMap<>();
+        e.getBindingResult().getFieldErrors()
+                .forEach(fe -> reasons.putIfAbsent(fe.getField(), fe.getDefaultMessage()));
+        return toValidationResponse(reasons);
+    }
+
+    // #2-1.쿼리 파라미터(@RequestParam) 검증 실패 시 에러 처리 (2·3번 중복 확인 등)
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ErrorResponse> handleHandlerMethodValidationException(HandlerMethodValidationException e) {
+        Map<String, String> reasons = new LinkedHashMap<>();
+        e.getParameterValidationResults().forEach(result -> {
+            String field = result.getMethodParameter().getParameterName();
+            result.getResolvableErrors().stream().findFirst()
+                    .ifPresent(error -> reasons.putIfAbsent(field, error.getDefaultMessage()));
+        });
+        return toValidationResponse(reasons);
+    }
+
+    // 검증 실패 응답: errors에 항목별 안내 문구, message에는 첫 번째 문구
+    private ResponseEntity<ErrorResponse> toValidationResponse(Map<String, String> reasons) {
+        List<ErrorResponse.FieldErrorDetail> errorList = reasons.entrySet().stream()
+                .map(entry -> new ErrorResponse.FieldErrorDetail(entry.getKey(), entry.getValue()))
+                .toList();
         String message = errorList.isEmpty() ? ErrorCode.INVALID_INPUT.getMessage() : errorList.get(0).reason();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(ErrorCode.INVALID_INPUT, message, errorList));
     }
@@ -83,6 +110,12 @@ public class GlobalExceptionHandler {
     // #9.경로, 쿼리 값의 타입 오류
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        return ErrorResponse.toResponseEntity(ErrorCode.INVALID_INPUT);
+    }
+
+    // #9-1.JSON이 아닌 Content-Type으로 Body를 보낸 경우 (형식 오류 → 400)
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {
         return ErrorResponse.toResponseEntity(ErrorCode.INVALID_INPUT);
     }
 

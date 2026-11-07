@@ -11,6 +11,10 @@ import Dandigo.SOS_map.domain.user.service.AuthService;
 import Dandigo.SOS_map.domain.user.service.UserService;
 import Dandigo.SOS_map.global.security.AuthUser;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,13 +38,22 @@ public class UserController {
 
     // #2.이메일 중복 확인 (중복이어도 200, available=false)
     @GetMapping("/check-email")
-    public ResponseEntity<EmailCheckResponse> checkEmail(@RequestParam String email) {
+    public ResponseEntity<EmailCheckResponse> checkEmail(
+            @RequestParam
+            @NotBlank(message = "올바른 이메일 주소를 입력해 주세요.")
+            @Email(message = "올바른 이메일 주소를 입력해 주세요.")
+            @Size(max = 100, message = "올바른 이메일 주소를 입력해 주세요.")
+            String email) {
         return ResponseEntity.ok(userService.checkEmail(email));
     }
 
     // #3.아이디 중복 확인 (중복이어도 200, available=false)
     @GetMapping("/check-login-id")
-    public ResponseEntity<LoginIdCheckResponse> checkLoginId(@RequestParam String loginId) {
+    public ResponseEntity<LoginIdCheckResponse> checkLoginId(
+            @RequestParam
+            @Pattern(regexp = "^[a-zA-Z0-9._-]{4,20}$",
+                    message = "아이디는 영문, 숫자, 점, 밑줄, 하이픈을 사용해 4~20자로 입력해 주세요.")
+            String loginId) {
         return ResponseEntity.ok(userService.checkLoginId(loginId));
     }
 

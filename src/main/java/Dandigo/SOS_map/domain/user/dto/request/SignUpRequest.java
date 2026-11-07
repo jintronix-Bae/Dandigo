@@ -26,4 +26,10 @@ public record SignUpRequest(
                 message = "비밀번호는 영문과 숫자를 포함해 8자 이상 입력해 주세요.")
         String password
 ) {
+    // 이름은 앞뒤 공백을 뺀 값으로 "2자 이상"을 검사·저장한다. ("  a  " 가 통과하지 않도록)
+    public SignUpRequest {
+        if (name != null) {
+            name = name.trim();
+        }
+    }
 }
