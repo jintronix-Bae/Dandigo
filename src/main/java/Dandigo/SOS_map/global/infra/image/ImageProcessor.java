@@ -28,6 +28,8 @@ public class ImageProcessor {
     private static final int THUMBNAIL_MAX_WIDTH = 400;
     private static final float BOX_MARGIN_RATIO = 0.15f;   // 얼굴 영역을 조금 넓게 가린다
     private static final int MOSAIC_BLOCKS = 8;            // 얼굴 한 변을 8칸 정도로 뭉갠다
+    private static final int DETECTION_MAX_BYTES = 4_500_000; // Rekognition 한도(5MB)보다 조금 작게
+    private static final int DETECTION_MAX_SIDE = 2048;
 
     // 파일 앞부분(매직 넘버)으로 실제 형식을 판별한다. 지원하지 않으면 null
     public String detectContentType(byte[] bytes) {
@@ -102,6 +104,24 @@ public class ImageProcessor {
             // 회전 정보를 못 읽으면 그대로 둔다
         }
         return 1;
+    }
+
+    // Rekognition은 5MB 이하 사진만 받는다. 크면 얼굴 감지용으로만 줄인 JPEG를 만든다.
+    // 얼굴 위치는 비율(0~1)로 돌아오므로, 블러는 원래 크기 사진에 그대로 적용할 수 있다.
+    public byte[] prepareForDetection(byte[] bytes) {
+        if (bytes.length <= DETECTION_MAX_BYTES) {
+            return bytes;
+        }
+        BufferedImage source = read(bytes);
+        double scale = Math.min(1.0, (double) DETECTION_MAX_SIDE / Math.max(source.getWidth(), source.getHeight()));
+        int width = Math.max(1, (int) Math.round(source.getWidth() * scale));
+        int height = Math.max(1, (int) Math.round(source.getHeight() * scale));
+        BufferedImage resized = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = resized.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g.drawImage(source, 0, 0, width, height, null);
+        g.dispose();
+        return write(resized, JPEG);
     }
 
     // 얼굴 영역들을 모자이크 처리한 새 사진을 만든다

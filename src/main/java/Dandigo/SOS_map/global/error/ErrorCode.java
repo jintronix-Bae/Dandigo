@@ -30,7 +30,7 @@ public enum ErrorCode {
     COMPLAINT_NOT_EDITABLE(HttpStatus.CONFLICT, "처리가 시작된 민원은 수정할 수 없습니다."),
     COMPLAINT_NOT_DELETABLE(HttpStatus.CONFLICT, "처리가 시작된 민원은 삭제할 수 없습니다."),
     // 413
-    FILE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "사진은 3MB 이하로 올려주세요."),
+    FILE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "사진은 10MB 이하로 올려주세요."),
     // 415
     UNSUPPORTED_FILE_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "jpg, png 형식의 사진만 올릴 수 있습니다."),
     // 500

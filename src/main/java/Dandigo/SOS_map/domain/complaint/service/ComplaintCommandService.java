@@ -53,7 +53,7 @@ public class ComplaintCommandService {
         Image original = imageService.getOwnedImage(userId, request.imageId(), ImageType.ORIGINAL);
 
         byte[] originalBytes = s3FileStorage.download(original.getUrl());
-        List<RelativeBox> faces = faceDetector.detectFaces(originalBytes);
+        List<RelativeBox> faces = faceDetector.detectFaces(imageProcessor.prepareForDetection(originalBytes));
         // 얼굴이 없으면 원본과 같은 사진을 블러 사진으로 저장한다 (11번에는 항상 블러 사진 ID를 보내도록)
         byte[] blurredBytes = faces.isEmpty()
                 ? originalBytes
