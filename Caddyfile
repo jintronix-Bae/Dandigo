@@ -1,0 +1,7 @@
+# HTTPS 앞단 (Caddy): Let's Encrypt 인증서를 자동으로 발급·갱신하고, 요청을 Spring(app:8080)으로 넘긴다.
+# 도메인은 docker-compose.yml 의 DOMAIN 환경변수 (기본 sos-map.duckdns.org)
+# http:// 로 들어오면 자동으로 https:// 로 이동시킨다.
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy app:8080
+}

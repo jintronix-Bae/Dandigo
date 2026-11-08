@@ -65,13 +65,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: docker-compose.yml 을 EC2로 복사
+      - name: docker-compose.yml, Caddyfile 을 EC2로 복사
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: docker-compose.yml
+          source: docker-compose.yml,Caddyfile
           target: ${{ env.DEPLOY_DIR }}
 
       - name: EC2에서 새 이미지로 재시작
@@ -99,7 +99,7 @@ jobs:
             printf 'DOCKER_IMAGE=%s/%s\nIMAGE_TAG=%s\n' "$DOCKERHUB_USERNAME" "$IMAGE_NAME" "$IMAGE_TAG" >> .env
 
             echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            docker compose pull app
+            docker compose pull app caddy
             docker logout   # 토큰이 서버(~/.docker/config.json)에 남지 않게
             docker compose up -d --no-build
             docker image prune -f

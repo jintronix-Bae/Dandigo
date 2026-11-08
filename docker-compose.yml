@@ -35,8 +35,9 @@ services:
     depends_on:
       mysql:
         condition: service_healthy     # MySQL이 준비된 뒤에 Spring을 띄운다
+    # 외부 요청은 Caddy(443)를 거쳐서만 들어온다. 8080은 서버 안에서만 열어 둔다 (EC2에서 curl localhost:8080 으로 점검용)
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       # 컨테이너 안에서는 localhost가 아니라 서비스 이름(mysql)으로 접속한다
       DB_URL: jdbc:mysql://mysql:3306/${DB_NAME:-sos_map}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&useSSL=false
@@ -59,5 +60,25 @@ services:
       JAVA_OPTS: ${JAVA_OPTS:--Xmx512m}
       TZ: Asia/Seoul
 
+  # HTTPS: https://도메인 → Caddy → app:8080. 인증서는 Let's Encrypt에서 자동 발급·갱신
+  caddy:
+    image: caddy:2.8
+    container_name: sos-map-caddy
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"      # 인증서 발급 확인 + http → https 자동 이동
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:-sos-map.duckdns.org}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data         # 발급받은 인증서 보관 (지우면 재발급)
+      - caddy-config:/config
+
 volumes:
   mysql-data:
+  caddy-data:
+  caddy-config:
