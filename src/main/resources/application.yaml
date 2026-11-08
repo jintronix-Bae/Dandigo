@@ -40,4 +40,5 @@ kakao:
 gemini:
   api-key: ${GEMINI_API_KEY:}
   image-model: ${GEMINI_IMAGE_MODEL:gemini-2.5-flash-image}
-  timeout-seconds: 60
+  # 이미지 생성은 보통 15~20초, 느리면 1분 이상 걸릴 수 있어 넉넉하게 둔다
+  timeout-seconds: ${GEMINI_TIMEOUT_SECONDS:120}

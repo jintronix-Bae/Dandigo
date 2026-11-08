@@ -32,7 +32,7 @@ public class GeminiImageClient {
 
     public GeminiImageClient(@Value("${gemini.api-key:}") String apiKey,
                              @Value("${gemini.image-model}") String model,
-                             @Value("${gemini.timeout-seconds:60}") long timeoutSeconds) {
+                             @Value("${gemini.timeout-seconds:120}") long timeoutSeconds) {
         Duration timeout = Duration.ofSeconds(timeoutSeconds);
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(
                 HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build());
